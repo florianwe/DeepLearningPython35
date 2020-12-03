@@ -16,8 +16,12 @@ and omits many desirable features.
 # Standard library
 import random
 
+
+
 # Third-party libraries
 import numpy as np
+
+import MyPlotter
 
 class Network(object):
 
@@ -35,8 +39,8 @@ class Network(object):
         self.num_layers = len(sizes)
         self.sizes = sizes
         self.biases = [np.random.randn(y, 1) for y in sizes[1:]]
-        self.weights = [np.random.randn(y, x)
-                        for x, y in zip(sizes[:-1], sizes[1:])]
+        self.weights = [np.random.randn(y, x) for x, y in zip(sizes[:-1], sizes[1:])]
+        self.plotter = MyPlotter.MyPloter(28, 20, 20)
 
     def feedforward(self, a):
         """Return the output of the network if ``a`` is input."""
@@ -70,7 +74,7 @@ class Network(object):
             for mini_batch in mini_batches:
                 self.update_mini_batch(mini_batch, eta)
             if test_data:
-                print("Epoch {} : {} / {}".format(j,self.evaluate(test_data),n_test));
+                print("Epoch {} : {} / {}".format(j,self.evaluate(test_data, j),n_test))
             else:
                 print("Epoch {} complete".format(j))
 
@@ -125,13 +129,28 @@ class Network(object):
             nabla_w[-l] = np.dot(delta, activations[-l-1].transpose())
         return (nabla_b, nabla_w)
 
-    def evaluate(self, test_data):
+    def evaluate(self, test_data, epoch):
         """Return the number of test inputs for which the neural
         network outputs the correct result. Note that the neural
         network's output is assumed to be the index of whichever
         neuron in the final layer has the highest activation."""
         test_results = [(np.argmax(self.feedforward(x)), y)
                         for (x, y) in test_data]
+        
+        count = 0
+        for result, data in zip(test_results, test_data):
+            if count == 30:
+                break
+            (x,y) = result
+            if x != y:
+                (a,_) = data
+                a = a.reshape(28,28)
+                self.plotter.add(a*255.0, epoch, count)
+                count += 1
+        self.plotter.show()
+
+
+
         return sum(int(x == y) for (x, y) in test_results)
 
     def cost_derivative(self, output_activations, y):
